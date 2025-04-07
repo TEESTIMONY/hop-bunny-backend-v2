@@ -9,7 +9,13 @@
     "start": "node index.js",
     "local": "nodemon index.js",
     "test": "node test-api.js",
-    "test:firebase": "node test-firebase.js"
+    "test:all": "node test-all.js",
+    "test:firebase": "node test-firebase.js",
+    "test:register": "node test-register.js",
+    "test:login": "node test-login.js",
+    "test:update-score": "node test-update-score.js",
+    "test:leaderboard": "node test-leaderboard.js",
+    "test:user-profile": "node test-user-profile.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
