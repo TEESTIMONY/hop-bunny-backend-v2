@@ -12,9 +12,9 @@ if (!firebase.apps.length) {
       }),
       databaseURL: process.env.FIREBASE_DATABASE_URL
     });
-    console.log('Firebase initialized successfully in leaderboard.js');
+    console.log('Firebase initialized successfully in leaderboard/index.js');
   } catch (error) {
-    console.error('Error initializing Firebase in leaderboard.js:', error);
+    console.error('Error initializing Firebase in leaderboard/index.js:', error);
   }
 }
 
@@ -22,7 +22,6 @@ const db = firebase.firestore();
 
 module.exports = async (req, res) => {
   console.log('Leaderboard endpoint called with method:', req.method);
-  console.log('Query parameters:', req.query);
   
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);

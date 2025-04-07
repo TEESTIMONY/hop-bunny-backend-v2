@@ -2,7 +2,9 @@
 const fetch = require('node-fetch');
 require('dotenv').config();
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Use deployed URL by default, or override with environment variable
+const API_BASE_URL = process.env.API_URL || 'https://hop-bunny-backend-v2.vercel.app/api';
+console.log(`Testing API at: ${API_BASE_URL}`);
 
 // Test function to make API requests
 async function testAPI() {
@@ -40,10 +42,19 @@ async function testAPI() {
 
     // Test leaderboard endpoint
     console.log('3. Testing leaderboard endpoint:');
-    const leaderboardResponse = await fetch(`${API_BASE_URL}/leaderboard?limit=5`);
-    const leaderboardData = await leaderboardResponse.json();
-    console.log('Status:', leaderboardResponse.status);
-    console.log('Response:', JSON.stringify(leaderboardData, null, 2));
+    try {
+      const leaderboardResponse = await fetch(`${API_BASE_URL}/leaderboard?limit=5`);
+      console.log('Status:', leaderboardResponse.status);
+      
+      if (leaderboardResponse.ok) {
+        const leaderboardData = await leaderboardResponse.json();
+        console.log('Response:', JSON.stringify(leaderboardData, null, 2));
+      } else {
+        console.log('Error response:', await leaderboardResponse.text());
+      }
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error.message);
+    }
     console.log('-----------------------------\n');
 
     console.log('API tests completed.');

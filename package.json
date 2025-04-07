@@ -6,19 +6,24 @@
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel deploy --prod",
-    "start": "vercel dev",
-    "test": "node test-api.js"
+    "start": "node index.js",
+    "local": "nodemon index.js",
+    "test": "node test-api.js",
+    "test:firebase": "node test-firebase.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "firebase-admin": "^11.10.1"
   },
   "devDependencies": {
     "dotenv": "^16.3.1",
     "node-fetch": "^2.6.12",
+    "nodemon": "^3.0.1",
     "vercel": "^32.5.0"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "license": "MIT"
-} 
+}
