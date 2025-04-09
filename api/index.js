@@ -21,7 +21,8 @@ module.exports = (req, res) => {
       { path: '/api/login', method: 'POST', description: 'User login' },
       { path: '/api/update-score', method: 'POST', description: 'Update a user\'s high score' },
       { path: '/api/leaderboard', method: 'GET', description: 'Get the global leaderboard' },
-      { path: '/api/user-profile', method: 'GET', description: 'Get a user\'s profile data' }
+      { path: '/api/user-profile', method: 'GET', description: 'Get a user\'s profile data' },
+      { path: '/api/users', method: 'GET', description: 'Get all registered users with pagination and filtering' }
     ],
     status: 'active'
   });
