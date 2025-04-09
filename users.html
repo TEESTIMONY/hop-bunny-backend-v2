@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hop Bunny - All Users</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .users-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .user-table th, .user-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .user-table th {
+            background-color: var(--light-color);
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        .user-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        .search-bar {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 8px 15px;
+            background-color: var(--light-color);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .pagination button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination-info {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        #loading {
+            text-align: center;
+            padding: 30px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="users-card">
+            <h1>All Registered Users</h1>
+            
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by username...">
+                <button class="btn btn-primary" id="searchButton">Search</button>
+            </div>
+            
+            <div id="loading">Loading users...</div>
+            
+            <div id="users-container" style="display: none;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>High Score</th>
+                            <th>Games Played</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-list">
+                        <!-- User data will be populated here -->
+                    </tbody>
+                </table>
+                
+                <div class="pagination" id="pagination">
+                    <button id="prev-page">Previous</button>
+                    <button id="next-page">Next</button>
+                </div>
+                
+                <div class="pagination-info" id="pagination-info">
+                    Showing page 1 of 1
+                </div>
+            </div>
+            
+            <div id="error-message" class="error-message"></div>
+            
+            <div class="info" style="margin-top: 30px;">
+                <p><a href="index.html">Back to Home</a> | <a href="dashboard.html">My Dashboard</a></p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2023 Hop Bunny Game - All Rights Reserved</p>
+    </footer>
+
+    <script src="js/users.js"></script>
+</body>
+</html> 
