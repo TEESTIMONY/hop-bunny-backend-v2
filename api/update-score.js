@@ -56,22 +56,24 @@ module.exports = async (req, res) => {
     }
 
     const userData = userDoc.data();
-    const currentHighScore = userData.highScore || 0;
+    const currentScore = userData.highScore || 0;
+    const newTotalScore = currentScore + score;
 
-    // Always update the score and play statistics
+    // Update the score by adding the new score to the existing score
     await userRef.update({
-      highScore: score,
+      highScore: newTotalScore,
       gamesPlayed: firebase.firestore.FieldValue.increment(1),
       lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     return res.status(200).json({
       message: 'Score updated successfully',
-      previousHighScore: currentHighScore,
-      newHighScore: score
+      previousScore: currentScore,
+      addedScore: score,
+      newTotalScore: newTotalScore
     });
   } catch (error) {
-    console.error('Error updating high score:', error);
+    console.error('Error updating score:', error);
     return res.status(500).json({
       error: 'Failed to update score',
       message: error.message
