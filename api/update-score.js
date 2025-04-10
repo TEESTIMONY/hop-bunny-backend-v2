@@ -59,7 +59,7 @@ module.exports = async (req, res) => {
     const currentHighScore = userData.highScore || 0;
 
     // Only update if the new score is higher
-    if (score > currentHighScore) {
+    if (score) {
       await userRef.update({
         highScore: score,
         gamesPlayed: firebase.firestore.FieldValue.increment(1),
