@@ -56,35 +56,24 @@ module.exports = async (req, res) => {
     }
 
     const userData = userDoc.data();
-    const currentHighScore = userData.highScore || 0;
+    const currentScore = userData.highScore || 0;
+    const newTotalScore = currentScore + score;
 
-    // Only update if the new score is higher
-    if (score > currentHighScore) {
-      await userRef.update({
-        highScore: score,
-        gamesPlayed: firebase.firestore.FieldValue.increment(1),
-        lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
-      });
+    // Update the score by adding the new score to the existing score
+    await userRef.update({
+      highScore: newTotalScore,
+      gamesPlayed: firebase.firestore.FieldValue.increment(1),
+      lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-      return res.status(200).json({
-        message: 'High score updated successfully',
-        previousHighScore: currentHighScore,
-        newHighScore: score
-      });
-    } else {
-      // Just update play statistics
-      await userRef.update({
-        gamesPlayed: firebase.firestore.FieldValue.increment(1),
-        lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      return res.status(200).json({
-        message: 'Score recorded but not a new high score',
-        highScore: currentHighScore
-      });
-    }
+    return res.status(200).json({
+      message: 'Score updated successfully',
+      previousScore: currentScore,
+      addedScore: score,
+      newTotalScore: newTotalScore
+    });
   } catch (error) {
-    console.error('Error updating high score:', error);
+    console.error('Error updating score:', error);
     return res.status(500).json({
       error: 'Failed to update score',
       message: error.message
