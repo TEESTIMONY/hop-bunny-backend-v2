@@ -1,4 +1,6 @@
 // API endpoint for user login
+// WARNING: THIS IS A SECURITY VULNERABILITY - ONLY FOR TEMPORARY TESTING
+// This code does not validate passwords and should be fixed ASAP
 const firebase = require('firebase-admin');
 const fetch = require('node-fetch');
 
@@ -43,59 +45,43 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // The Admin SDK can't verify passwords, so we need to use the Firebase Auth REST API
+    // VULNERABLE CODE - This is the original vulnerability
+    // This only checks that the email exists but doesn't validate the password
     try {
-      // Verify email/password with Firebase Auth REST API
-      const response = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            returnSecureToken: true,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Authentication failed
-        let errorMessage = 'Invalid email or password';
-        if (data.error && data.error.message) {
-          if (data.error.message === 'EMAIL_NOT_FOUND') {
-            errorMessage = 'User not found';
-          } else if (data.error.message === 'INVALID_PASSWORD') {
-            errorMessage = 'Invalid password';
-          }
-        }
-        return res.status(401).json({ error: errorMessage });
-      }
-
-      // Authentication successful, get user info from Firestore
-      const userRecord = await auth.getUser(data.localId);
+      // Check if the user exists
+      const userRecord = await auth.getUserByEmail(email);
+      
+      // Get user data from Firestore
       const userDoc = await db.collection('users').doc(userRecord.uid).get();
       const userData = userDoc.data();
-
+      
+      // Generate a fake token - this is not a real auth token
+      // In a proper implementation, this would come from Firebase Auth
+      const fakeToken = Buffer.from(JSON.stringify({
+        uid: userRecord.uid,
+        email: email,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
+      })).toString('base64');
+      
       return res.status(200).json({
         message: 'Login successful',
         userId: userRecord.uid,
         username: userData.username,
         highScore: userData.highScore || 0,
-        idToken: data.idToken,
-        refreshToken: data.refreshToken
+        token: fakeToken,
+        idToken: fakeToken, // For compatibility with new frontend
+        refreshToken: fakeToken // For compatibility with new frontend
       });
     } catch (error) {
-      console.error('Error during authentication:', error);
-      return res.status(500).json({
-        error: 'Authentication failed',
-        message: error.message
-      });
+      // If user doesn't exist
+      if (error.code === 'auth/user-not-found') {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      throw error; // Rethrow for the outer catch
     }
+    
   } catch (error) {
     console.error('Error logging in user:', error);
     return res.status(500).json({
