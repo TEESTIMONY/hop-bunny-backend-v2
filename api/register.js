@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { email, password, username, referrerId, referrerUsername } = req.body;
+    const { email, password, username } = req.body;
 
     // Validate input
     if (!email || !password || !username) {
@@ -55,65 +55,13 @@ module.exports = async (req, res) => {
       email,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       highScore: 0,
-      gamesPlayed: 0,
-      referralCount: 0,  // Initialize referral count
-      referrals: [],     // Initialize empty array of referrals
-      referredBy: referrerId || null,  // Track who referred this user
-      referredByUsername: referrerUsername || null  // Store the username of the referrer
+      gamesPlayed: 0
     });
 
-    // Prepare the response
-    const responseData = {
+    return res.status(201).json({ 
       message: 'User registered successfully',
       userId: userRecord.uid
-    };
-
-    // If this user was referred by someone, update the referrer's stats
-    if (referrerId && referrerUsername) {
-      try {
-        // Get a reference to the referrer's document
-        const referrerRef = db.collection('users').doc(referrerId);
-        
-        // Use a transaction to safely update the referral count and list
-        const referralResult = await db.runTransaction(async (transaction) => {
-          const referrerDoc = await transaction.get(referrerRef);
-          
-          if (!referrerDoc.exists) {
-            return { success: false, message: 'Referrer user does not exist' };
-          }
-          
-          const referrerData = referrerDoc.data();
-          
-          // Initialize referral fields if they don't exist
-          const referrals = referrerData.referrals || [];
-          const referralCount = referrerData.referralCount || 0;
-          
-          // Update the referrer document with incremented count and new username
-          transaction.update(referrerRef, {
-            referralCount: referralCount + 1,
-            referrals: [...referrals, username],
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          
-          return { 
-            success: true, 
-            newCount: referralCount + 1,
-            message: 'Referral count updated successfully' 
-          };
-        });
-        
-        // Add referral info to the response
-        responseData.referralUpdated = referralResult.success;
-        responseData.referralMessage = referralResult.message;
-        
-      } catch (referralError) {
-        console.error('Error updating referral count:', referralError);
-        responseData.referralUpdated = false;
-        responseData.referralMessage = 'Failed to update referral count';
-      }
-    }
-
-    return res.status(201).json(responseData);
+    });
   } catch (error) {
     console.error('Error registering new user:', error);
     return res.status(500).json({ 
