@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser-Based Server</title>
+</head>
+<body>
+    <h1>Browser-Based Mock Server</h1>
+    <p>This page simulates the server without requiring Node.js to be installed.</p>
+    
+    <div id="server-status" style="margin: 20px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
+        <strong>Server Status:</strong> <span id="status">Starting...</span>
+    </div>
+    
+    <div id="log" style="margin: 20px; padding: 10px; height: 300px; overflow-y: auto; background-color: #f8f8f8; border: 1px solid #ddd; font-family: monospace;">
+        <!-- Log messages will appear here -->
+    </div>
+    
+    <h2>Registered Users:</h2>
+    <div id="users-list" style="margin: 20px; padding: 10px; background-color: #f8f8f8; border: 1px solid #ddd;">
+        <!-- Users will be displayed here -->
+    </div>
+    
+    <script>
+        // In-memory user database
+        const users = [
+            {
+                id: '1234567890',
+                username: 'testuser',
+                email: 'test@example.com',
+                password: 'password123',
+                createdAt: new Date(),
+                highScore: 100,
+                gamesPlayed: 5
+            }
+        ];
+        
+        // DOM elements
+        const statusElement = document.getElementById('status');
+        const logElement = document.getElementById('log');
+        const usersListElement = document.getElementById('users-list');
+        
+        // Log function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="message">${message}</span>`;
+            
+            if (type === 'error') {
+                logEntry.style.color = '#d9534f';
+            } else if (type === 'success') {
+                logEntry.style.color = '#5cb85c';
+            }
+            
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // Update users list display
+        function updateUsersList() {
+            usersListElement.innerHTML = '';
+            
+            if (users.length === 0) {
+                usersListElement.textContent = 'No users registered.';
+                return;
+            }
+            
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            
+            // Create header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            ['Username', 'Email', 'Password', 'High Score'].forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                th.style.textAlign = 'left';
+                th.style.padding = '8px';
+                th.style.borderBottom = '1px solid #ddd';
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create body
+            const tbody = document.createElement('tbody');
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                
+                const createCell = (text) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    td.style.padding = '8px';
+                    td.style.borderBottom = '1px solid #eee';
+                    return td;
+                };
+                
+                row.appendChild(createCell(user.username));
+                row.appendChild(createCell(user.email));
+                row.appendChild(createCell(user.password));
+                row.appendChild(createCell(user.highScore));
+                
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            
+            usersListElement.appendChild(table);
+        }
+        
+        // Initialize server
+        function initServer() {
+            // Update status
+            statusElement.textContent = 'Running';
+            statusElement.style.color = '#5cb85c';
+            
+            // Log startup
+            log('Server started on http://localhost:8080', 'success');
+            log('Available endpoints:');
+            log('  POST /api/register - Register a new user');
+            log('  POST /api/login - Login with credentials');
+            
+            // Set up the mock endpoints by intercepting fetch
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (typeof url === 'string' && url.includes('/api/')) {
+                    return handleFetchRequest(url, options);
+                }
+                
+                // Pass through to original fetch for other requests
+                return originalFetch.apply(this, arguments);
+            };
+            
+            // Update users list
+            updateUsersList();
+        }
+        
+        // Handle mock API requests
+        async function handleFetchRequest(url, options) {
+            // Add a small delay to simulate network
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Parse the URL to get the endpoint
+            const endpoint = url.split('/api/')[1];
+            
+            // Parse the request body
+            let body = {};
+            if (options && options.body) {
+                try {
+                    body = JSON.parse(options.body);
+                } catch (error) {
+                    log(`Error parsing request body: ${error.message}`, 'error');
+                }
+            }
+            
+            // Mock response based on the endpoint
+            if (endpoint === 'register' && options.method === 'POST') {
+                return handleRegister(body);
+            } else if (endpoint === 'login' && options.method === 'POST') {
+                return handleLogin(body);
+            } else {
+                // Unknown endpoint
+                log(`Request to unknown endpoint: ${url}`, 'error');
+                return mockResponse(404, { error: 'Not found', message: 'Endpoint not found' });
+            }
+        }
+        
+        // Handle registration
+        function handleRegister(body) {
+            const { username, email, password } = body;
+            
+            log(`Registration request received: ${username}, ${email}`, 'info');
+            
+            // Validate inputs
+            if (!username || !email || !password) {
+                log('Registration failed: Missing required fields', 'error');
+                return mockResponse(400, { 
+                    error: 'Missing required fields',
+                    message: 'Username, email, and password are required'
+                });
+            }
+            
+            // Check if user exists
+            const existingUser = users.find(user => user.email === email);
+            if (existingUser) {
+                log(`Registration failed: User with email ${email} already exists`, 'error');
+                return mockResponse(409, {
+                    error: 'User already exists',
+                    message: 'A user with this email already exists'
+                });
+            }
+            
+            // Create new user
+            const newUser = {
+                id: Date.now().toString(),
+                username,
+                email,
+                password,
+                createdAt: new Date(),
+                highScore: 0,
+                gamesPlayed: 0
+            };
+            
+            // Add to users
+            users.push(newUser);
+            
+            // Update display
+            updateUsersList();
+            
+            log(`User registered successfully: ${username}`, 'success');
+            
+            return mockResponse(201, {
+                message: 'User registered successfully',
+                userId: newUser.id
+            });
+        }
+        
+        // Handle login
+        function handleLogin(body) {
+            const { email, password } = body;
+            
+            log(`Login request received: ${email}`, 'info');
+            log(`Current users in system: ${JSON.stringify(users.map(u => u.email))}`, 'info');
+            
+            // First find user by email
+            const userByEmail = users.find(user => user.email === email);
+            
+            if (!userByEmail) {
+                log(`Authentication failed: No user found with email "${email}"`, 'error');
+                return mockResponse(401, {
+                    error: 'Authentication failed',
+                    message: 'Invalid email or password'
+                });
+            }
+            
+            // Then check password
+            if (userByEmail.password !== password) {
+                log(`Authentication failed: Password incorrect for user "${email}"`, 'error');
+                log(`Attempted password: "${password}", Stored password: "${userByEmail.password}"`, 'error');
+                return mockResponse(401, {
+                    error: 'Authentication failed',
+                    message: 'Invalid email or password'
+                });
+            }
+            
+            log(`Authentication successful for user: ${userByEmail.username}`, 'success');
+            
+            // Generate a simple token
+            const token = btoa(`${userByEmail.id}:${Date.now()}`);
+            
+            return mockResponse(200, {
+                userId: userByEmail.id,
+                username: userByEmail.username,
+                highScore: userByEmail.highScore || 0,
+                token
+            });
+        }
+        
+        // Create a mock response
+        function mockResponse(status, data) {
+            return Promise.resolve({
+                status,
+                ok: status >= 200 && status < 300,
+                json: () => Promise.resolve(data)
+            });
+        }
+        
+        // Start the server
+        initServer();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test Page - Live Backend</title>
+</head>
+<body>
+    <h1>Login Test - Using Live Backend</h1>
+    <p>This page connects to the actual backend at <strong>hop-bunny-backend-v2.vercel.app</strong></p>
+    <p>Open the browser console (F12) to see detailed debug information.</p>
+    
+    <div id="login-form">
+        <h2>Login</h2>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="">
+        </div>
+        <div style="margin-top: 10px;">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="">
+        </div>
+        <div style="margin-top: 10px;">
+            <input type="checkbox" id="remember-me">
+            <label for="remember-me">Remember me</label>
+        </div>
+        <div style="margin-top: 10px;">
+            <button id="login-button">Login</button>
+        </div>
+    </div>
+
+    <div id="status" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <div style="margin-top: 20px;">
+        <button id="clear-storage">Clear Storage</button>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <h3>Local Storage Contents:</h3>
+        <pre id="local-storage-display"></pre>
+        
+        <h3>Session Storage Contents:</h3>
+        <pre id="session-storage-display"></pre>
+    </div>
+
+    <script>
+        // Configuration
+        const isDevelopment = true;
+        const LOGIN_URL = 'https://hop-bunny-backend-v2.vercel.app/api/login';
+        
+        // DOM elements
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const rememberMe = document.getElementById('remember-me');
+        const loginButton = document.getElementById('login-button');
+        const clearStorageButton = document.getElementById('clear-storage');
+        const statusDiv = document.getElementById('status');
+        const localStorageDisplay = document.getElementById('local-storage-display');
+        const sessionStorageDisplay = document.getElementById('session-storage-display');
+
+        // Display initial storage contents
+        updateStorageDisplays();
+
+        // Show success message
+        function showSuccess(message) {
+            statusDiv.style.backgroundColor = '#d4edda';
+            statusDiv.style.color = '#155724';
+            statusDiv.textContent = message;
+        }
+
+        // Show error message
+        function showError(message) {
+            statusDiv.style.backgroundColor = '#f8d7da';
+            statusDiv.style.color = '#721c24';
+            statusDiv.textContent = message;
+        }
+
+        // Update storage displays
+        function updateStorageDisplays() {
+            localStorageDisplay.textContent = formatStorageContents(localStorage);
+            sessionStorageDisplay.textContent = formatStorageContents(sessionStorage);
+        }
+
+        // Format storage contents for display
+        function formatStorageContents(storage) {
+            const items = {};
+            for (let i = 0; i < storage.length; i++) {
+                const key = storage.key(i);
+                items[key] = storage.getItem(key);
+            }
+            return JSON.stringify(items, null, 2);
+        }
+
+        // Clear storage
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            updateStorageDisplays();
+            showSuccess('Storage cleared successfully');
+        }
+
+        // Login function
+        async function login(email, password) {
+            loginButton.textContent = 'Logging in...';
+            loginButton.disabled = true;
+            
+            try {
+                // Validate inputs before making the request
+                if (!email || !password) {
+                    throw new Error('Email and password are required');
+                }
+                
+                // Trim inputs to remove any accidental whitespace
+                email = email.trim();
+                password = password.trim();
+
+                console.log('Attempting login with:', { email }); // Don't log password for security
+
+                const response = await fetch(LOGIN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                // Debug the server response
+                console.log('Server response:', {
+                    status: response.status,
+                    ok: response.ok,
+                    data: data
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Login failed');
+                }
+
+                // Store user data in localStorage or sessionStorage based on "remember me"
+                if (data.token) {
+                    if (rememberMe.checked) {
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('userId', data.userId || '');
+                        localStorage.setItem('username', data.username || '');
+                        localStorage.setItem('highScore', data.highScore || 0);
+                    } else {
+                        sessionStorage.setItem('token', data.token);
+                        sessionStorage.setItem('userId', data.userId || '');
+                        sessionStorage.setItem('username', data.username || '');
+                        sessionStorage.setItem('highScore', data.highScore || 0);
+                    }
+
+                    // Show success message
+                    showSuccess(`Login successful! Welcome, ${data.username}!`);
+                    
+                    // Update storage displays
+                    updateStorageDisplays();
+                } else {
+                    // If the server doesn't return a token, authentication failed
+                    throw new Error('Authentication failed. Invalid credentials.');
+                }
+                
+            } catch (error) {
+                showError(error.message || 'Login failed');
+                console.error('Login error:', error);
+            } finally {
+                loginButton.textContent = 'Login';
+                loginButton.disabled = false;
+            }
+        }
+
+        // Add event listeners
+        loginButton.addEventListener('click', () => {
+            login(emailInput.value, passwordInput.value);
+        });
+        
+        clearStorageButton.addEventListener('click', clearStorage);
+    </script>
+</body>
+</html> 
