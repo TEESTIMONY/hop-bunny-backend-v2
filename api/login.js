@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({ error: 'Email and password are required....' });
     }
 
     // This endpoint can't directly sign in users with email/password as that's not supported by the Admin SDK
