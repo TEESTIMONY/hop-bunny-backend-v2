@@ -8,8 +8,13 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS for all routes with explicit configuration
+app.use(cors({
+  origin: '*', // Allow requests from any origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allow common headers
+  credentials: true // Allow cookies and authentication headers
+}));
 
 // Parse JSON bodies
 app.use(bodyParser.json());
