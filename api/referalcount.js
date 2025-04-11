@@ -1,5 +1,6 @@
 // API endpoint for updating user referral counts
 const firebase = require('firebase-admin');
+const handleCors = require('./middleware/cors');
 
 // Check if Firebase is already initialized to avoid multiple initializations
 if (!firebase.apps.length) {
@@ -16,27 +17,12 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 
 module.exports = async (req, res) => {
-  // Enable CORS - more permissive configuration
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  
-  // Allow requests from any origin
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
-
-  // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  // Handle CORS - if it's a preflight request, it stops here
+  if (handleCors(req, res)) {
+    return; // Preflight request handled, stop execution
   }
 
-  // Only allow POST methods
+  // Only allow POST methods for actual requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Please use POST.' });
   }
