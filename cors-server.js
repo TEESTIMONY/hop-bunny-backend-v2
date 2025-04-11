@@ -15,7 +15,18 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Simple in-memory storage for demo purposes
-const users = [];
+const users = [
+  // Add a test user that will always be available
+  {
+    id: '1234567890',
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'password123',
+    createdAt: new Date(),
+    highScore: 100,
+    gamesPlayed: 5
+  }
+];
 
 // Create a simplified version of the register endpoint
 app.post('/api/register', (req, res) => {
@@ -75,23 +86,38 @@ app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
     console.log('Login request received:', { email });
+    console.log(`Current users in system: ${JSON.stringify(users.map(u => u.email))}`);
     
-    // Find user
-    const user = users.find(user => user.email === email && user.password === password);
+    // First find user by email only
+    const userByEmail = users.find(user => user.email === email);
     
-    if (!user) {
+    if (!userByEmail) {
+      console.log(`Authentication failed: No user found with email "${email}"`);
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid email or password'
       });
     }
     
+    // Then check password
+    if (userByEmail.password !== password) {
+      console.log(`Authentication failed: Password incorrect for user "${email}"`);
+      console.log(`Attempted password: "${password}", Stored password: "${userByEmail.password}"`);
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Invalid email or password'
+      });
+    }
+    
+    console.log(`Authentication successful for user: ${userByEmail.username}`);
+    
     // Generate a simple token (in a real app, use JWT)
-    const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+    const token = Buffer.from(`${userByEmail.id}:${Date.now()}`).toString('base64');
     
     return res.status(200).json({
-      userId: user.id,
-      username: user.username,
+      userId: userByEmail.id,
+      username: userByEmail.username,
+      highScore: userByEmail.highScore || 0,
       token
     });
   } catch (error) {
