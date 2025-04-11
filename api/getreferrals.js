@@ -1,6 +1,5 @@
 // API endpoint for fetching user referral information
 const firebase = require('firebase-admin');
-const handleCors = require('./middleware/cors');
 
 // Check if Firebase is already initialized to avoid multiple initializations
 if (!firebase.apps.length) {
@@ -17,9 +16,16 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 
 module.exports = async (req, res) => {
-  // Handle CORS - if it's a preflight request, it stops here
-  if (handleCors(req, res)) {
-    return; // Preflight request handled, stop execution
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
 
   // Allow both GET and POST methods
