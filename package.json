@@ -15,8 +15,7 @@
     "test:login": "node test-login.js",
     "test:update-score": "node test-update-score.js",
     "test:leaderboard": "node test-leaderboard.js",
-    "test:user-profile": "node test-user-profile.js",
-    "fix:user-auth": "node fix-user-auth.js"
+    "test:user-profile": "node test-user-profile.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

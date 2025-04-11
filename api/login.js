@@ -1,8 +1,5 @@
 // API endpoint for user login
-// WARNING: THIS IS A SECURITY VULNERABILITY - ONLY FOR TEMPORARY TESTING
-// This code does not validate passwords and should be fixed ASAP
 const firebase = require('firebase-admin');
-const fetch = require('node-fetch');
 
 // Check if Firebase is already initialized to avoid multiple initializations
 if (!firebase.apps.length) {
@@ -45,8 +42,10 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // VULNERABLE CODE - This is the original vulnerability
-    // This only checks that the email exists but doesn't validate the password
+    // This endpoint can't directly sign in users with email/password as that's not supported by the Admin SDK
+    // Instead, we'll verify the user exists and return a success message
+    // The actual sign-in will happen on the client side using Firebase Auth SDK
+    
     try {
       // Check if the user exists
       const userRecord = await auth.getUserByEmail(email);
@@ -55,23 +54,11 @@ module.exports = async (req, res) => {
       const userDoc = await db.collection('users').doc(userRecord.uid).get();
       const userData = userDoc.data();
       
-      // Generate a fake token - this is not a real auth token
-      // In a proper implementation, this would come from Firebase Auth
-      const fakeToken = Buffer.from(JSON.stringify({
-        uid: userRecord.uid,
-        email: email,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600
-      })).toString('base64');
-      
       return res.status(200).json({
-        message: 'Login successful',
+        message: 'User exists',
         userId: userRecord.uid,
         username: userData.username,
-        highScore: userData.highScore || 0,
-        token: fakeToken,
-        idToken: fakeToken, // For compatibility with new frontend
-        refreshToken: fakeToken // For compatibility with new frontend
+        highScore: userData.highScore || 0
       });
     } catch (error) {
       // If user doesn't exist
