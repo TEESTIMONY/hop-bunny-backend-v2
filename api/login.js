@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
       const userData = userDoc.data();
       
       return res.status(200).json({
-        message: 'User exists',
+        message: 'User exists and this works',
         userId: userRecord.uid,
         username: userData.username,
         highScore: userData.highScore || 0
