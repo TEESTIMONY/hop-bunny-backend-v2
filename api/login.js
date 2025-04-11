@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -35,33 +35,64 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { email, password } = req.body;
+    const { email, password, idToken } = req.body;
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required....' });
+      return res.status(400).json({ error: 'Email and password are required.' });
     }
 
-    // This endpoint can't directly sign in users with email/password as that's not supported by the Admin SDK
-    // Instead, we'll verify the user exists and return a success message
-    // The actual sign-in will happen on the client side using Firebase Auth SDK
-    
+    // For proper authentication, we need to verify both email and password
+    // Since Firebase Admin SDK doesn't support email/password authentication directly,
+    // we need to use the idToken from the client's Firebase Auth SDK
+
+    if (!idToken) {
+      return res.status(400).json({ 
+        error: 'Authentication failed', 
+        message: 'ID token is required for authentication' 
+      });
+    }
+
     try {
-      // Check if the user exists
-      const userRecord = await auth.getUserByEmail(email);
+      // Verify the ID token
+      const decodedToken = await auth.verifyIdToken(idToken);
+      const uid = decodedToken.uid;
+      
+      // Verify that the token's email matches the provided email
+      if (decodedToken.email !== email) {
+        return res.status(401).json({ 
+          error: 'Authentication failed', 
+          message: 'Token email does not match provided email' 
+        });
+      }
       
       // Get user data from Firestore
-      const userDoc = await db.collection('users').doc(userRecord.uid).get();
+      const userDoc = await db.collection('users').doc(uid).get();
+      
+      if (!userDoc.exists) {
+        return res.status(404).json({ error: 'User data not found' });
+      }
+      
       const userData = userDoc.data();
       
       return res.status(200).json({
-        message: 'User exists and this works',
-        userId: userRecord.uid,
+        message: 'Login successful',
+        userId: uid,
         username: userData.username,
         highScore: userData.highScore || 0
       });
     } catch (error) {
-      // If user doesn't exist
+      console.error('Token verification error:', error);
+      
+      if (error.code === 'auth/id-token-expired' || 
+          error.code === 'auth/id-token-revoked' || 
+          error.code === 'auth/invalid-id-token') {
+        return res.status(401).json({ 
+          error: 'Authentication failed', 
+          message: 'Invalid or expired token' 
+        });
+      }
+      
       if (error.code === 'auth/user-not-found') {
         return res.status(404).json({ error: 'User not found' });
       }
