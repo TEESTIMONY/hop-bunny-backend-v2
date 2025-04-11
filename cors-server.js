@@ -1,33 +1,20 @@
 // Simple Express server with explicit CORS headers for all responses
-// This completely disables CORS restrictions
+// This allows requests only from specified origins
 
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware to manually add CORS headers to all responses
-app.use((req, res, next) => {
-  // Allow requests from any origin
-  res.header('Access-Control-Allow-Origin', '*');
-  
-  // Allow all HTTP methods
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
-  // Allow all headers that might be sent by the client
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Allow credentials
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+// Configure CORS with specific allowed origins
+app.use(cors({
+  origin: ['http://127.0.0.1:5500', 'http://localhost:5500', 'http://localhost:3000','https://hop-bunny.vercel.app'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  credentials: true
+}));
 
 // Parse JSON bodies
 app.use(bodyParser.json());
@@ -123,8 +110,12 @@ app.post('/api/login', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`API server with CORS disabled running at http://localhost:${PORT}`);
-  console.log('Available endpoints:');
+  console.log(`API server running at http://localhost:${PORT}`);
+  console.log('CORS is configured to allow requests from:');
+  console.log('- http://127.0.0.1:5500');
+  console.log('- http://localhost:5500');
+  console.log('- http://localhost:3000');
+  console.log('\nAvailable endpoints:');
   console.log('  POST /api/register');
   console.log('  POST /api/login');
 }); 
