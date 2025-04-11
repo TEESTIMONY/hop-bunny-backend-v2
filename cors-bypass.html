@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Bypass for Hop Bunny</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            display: block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hop Bunny API CORS Bypass</h1>
+    
+    <div class="container">
+        <h2>About</h2>
+        <p>This tool helps you bypass CORS restrictions when accessing the Hop Bunny API. It uses public CORS proxies to forward your requests.</p>
+        <p><strong>Note:</strong> Do not use this for sensitive data as requests are sent through third-party services.</p>
+    </div>
+    
+    <div class="container">
+        <h2>API Request</h2>
+        <form id="apiForm">
+            <div>
+                <label for="endpoint">API Endpoint:</label>
+                <select id="endpoint">
+                    <option value="/api/login">Login</option>
+                    <option value="/api/register">Register</option>
+                </select>
+            </div>
+            
+            <div id="loginForm">
+                <h3>Login</h3>
+                <div>
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" placeholder="Enter your email">
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+            </div>
+            
+            <div id="registerForm" style="display:none;">
+                <h3>Register</h3>
+                <div>
+                    <label for="regUsername">Username:</label>
+                    <input type="text" id="regUsername" placeholder="Choose a username">
+                </div>
+                <div>
+                    <label for="regEmail">Email:</label>
+                    <input type="email" id="regEmail" placeholder="Enter your email">
+                </div>
+                <div>
+                    <label for="regPassword">Password:</label>
+                    <input type="password" id="regPassword" placeholder="Choose a password">
+                </div>
+            </div>
+            
+            <button type="submit" id="submitBtn">Send Request</button>
+        </form>
+    </div>
+    
+    <div class="container">
+        <h2>Response</h2>
+        <div>
+            <p id="status"></p>
+            <pre id="response"></pre>
+        </div>
+    </div>
+    
+    <script>
+        // Base URL for the Hop Bunny API
+        const API_BASE_URL = 'https://hop-bunny-backend-v2.vercel.app';
+        
+        // List of CORS proxies to try
+        const CORS_PROXIES = [
+            'https://corsproxy.io/?',
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.allorigins.win/raw?url='
+        ];
+        
+        // DOM elements
+        const endpointSelect = document.getElementById('endpoint');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const apiForm = document.getElementById('apiForm');
+        const statusElement = document.getElementById('status');
+        const responseElement = document.getElementById('response');
+        
+        // Switch between login and register forms
+        endpointSelect.addEventListener('change', function() {
+            if (this.value === '/api/login') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else if (this.value === '/api/register') {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        });
+        
+        // Form submission
+        apiForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const endpoint = endpointSelect.value;
+            let requestData = {};
+            
+            if (endpoint === '/api/login') {
+                requestData = {
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                };
+            } else if (endpoint === '/api/register') {
+                requestData = {
+                    username: document.getElementById('regUsername').value,
+                    email: document.getElementById('regEmail').value,
+                    password: document.getElementById('regPassword').value
+                };
+            }
+            
+            statusElement.innerHTML = 'Sending request...';
+            statusElement.className = '';
+            
+            // Try each CORS proxy until one works
+            tryProxies(0, endpoint, requestData);
+        });
+        
+        // Try CORS proxies one by one
+        async function tryProxies(index, endpoint, requestData) {
+            if (index >= CORS_PROXIES.length) {
+                statusElement.innerHTML = 'Error: All CORS proxies failed';
+                statusElement.className = 'error';
+                responseElement.textContent = 'Could not bypass CORS restrictions. Try again later.';
+                return;
+            }
+            
+            const proxyUrl = CORS_PROXIES[index] + encodeURIComponent(API_BASE_URL + endpoint);
+            
+            try {
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusElement.innerHTML = `Success! Status: ${response.status}`;
+                    statusElement.className = 'success';
+                } else {
+                    statusElement.innerHTML = `API Error. Status: ${response.status}`;
+                    statusElement.className = 'error';
+                }
+                
+                responseElement.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error(`Proxy ${CORS_PROXIES[index]} failed:`, error);
+                // Try next proxy
+                tryProxies(index + 1, endpoint, requestData);
+            }
+        }
+        
+        // Direct API call (will fail due to CORS)
+        async function directApiCall(endpoint, requestData) {
+            try {
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData),
+                    mode: 'no-cors' // This will make the response opaque
+                });
+                
+                statusElement.innerHTML = `Response received, status: ${response.status}`;
+                
+                // With mode: 'no-cors', you can't read the response
+                responseElement.textContent = 'Response cannot be read due to CORS restrictions';
+            } catch (error) {
+                statusElement.innerHTML = 'Error: ' + error.message;
+                statusElement.className = 'error';
+                responseElement.textContent = error.stack;
+            }
+        }
+    </script>
+</body>
+</html> 

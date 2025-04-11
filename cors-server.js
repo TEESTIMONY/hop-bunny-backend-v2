@@ -1,20 +1,33 @@
-// Simple Express server to handle POST requests and add CORS headers
-// This is a simplified version of server.js that you can run locally
+// Simple Express server with explicit CORS headers for all responses
+// This completely disables CORS restrictions
 
 const express = require('express');
-const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enable CORS for all routes with explicit configuration
-app.use(cors({
-  origin: '*', // Allow requests from any origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allow common headers
-  credentials: true // Allow cookies and authentication headers
-}));
+// Middleware to manually add CORS headers to all responses
+app.use((req, res, next) => {
+  // Allow requests from any origin
+  res.header('Access-Control-Allow-Origin', '*');
+  
+  // Allow all HTTP methods
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  // Allow all headers that might be sent by the client
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Allow credentials
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Parse JSON bodies
 app.use(bodyParser.json());
@@ -108,92 +121,10 @@ app.post('/api/login', (req, res) => {
   }
 });
 
-// User profile endpoint
-app.get('/api/user-profile', (req, res) => {
-  try {
-    const userId = req.query.userId;
-    
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
-    
-    const user = users.find(user => user.id === userId);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    return res.status(200).json({
-      profile: {
-        userId: user.id,
-        username: user.username,
-        email: user.email,
-        highScore: user.highScore,
-        gamesPlayed: user.gamesPlayed,
-        rank: 1, // Mock rank
-        createdAt: user.createdAt
-      }
-    });
-  } catch (error) {
-    console.error('Error in user profile endpoint:', error);
-    return res.status(500).json({
-      error: 'Server error',
-      message: error.message
-    });
-  }
-});
-
-// Users list endpoint
-app.get('/api/users', (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const username = req.query.username || '';
-    
-    // Filter users if username provided
-    let filteredUsers = users;
-    if (username) {
-      filteredUsers = users.filter(user => 
-        user.username.toLowerCase().includes(username.toLowerCase())
-      );
-    }
-    
-    // Paginate users
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-    
-    return res.status(200).json({
-      users: paginatedUsers.map(user => ({
-        userId: user.id,
-        username: user.username,
-        email: user.email,
-        highScore: user.highScore,
-        gamesPlayed: user.gamesPlayed,
-        createdAt: user.createdAt
-      })),
-      pagination: {
-        total: filteredUsers.length,
-        page,
-        limit,
-        pages: Math.ceil(filteredUsers.length / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Error in users endpoint:', error);
-    return res.status(500).json({
-      error: 'Server error',
-      message: error.message
-    });
-  }
-});
-
 // Start the server
 app.listen(PORT, () => {
-  console.log(`API server running at http://localhost:${PORT}`);
+  console.log(`API server with CORS disabled running at http://localhost:${PORT}`);
   console.log('Available endpoints:');
   console.log('  POST /api/register');
   console.log('  POST /api/login');
-  console.log('  GET /api/user-profile?userId=<id>');
-  console.log('  GET /api/users');
 }); 
